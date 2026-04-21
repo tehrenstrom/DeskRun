@@ -240,6 +240,17 @@ struct JourneyMapView: View {
                         }
                     )
 
+                    // Trail signposts — wooden boards listing upcoming landmark
+                    // distances, sparse (~1 every 20mi), world-locked.
+                    TrailSignpostLayer(
+                        trail: trail,
+                        milesTraveled: active.milesTraveled,
+                        bandFrame: foregroundBand,
+                        hikerScreenX: hikerOffsetX,
+                        pxPerMile: pxPerMile,
+                        settings: settings
+                    )
+
                     // Hiker — bottom of sprite rests on the trail top
                     HikerSprite(size: hikerSize, date: timeline.date, speedKmh: speedKmh)
                         .frame(width: hikerSize, height: hikerSize)
