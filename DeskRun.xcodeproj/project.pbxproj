@@ -32,6 +32,7 @@
 		A1000001000000000000001D /* TreadmillProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001D /* TreadmillProtocol.swift */; };
 		A1000001000000000000001E /* TreadmillAdapterRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001E /* TreadmillAdapterRegistry.swift */; };
 		A1000001000000000000001F /* PitPatAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001F /* PitPatAdapter.swift */; };
+		A10000010000000000000020 /* KingSmithAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000020 /* KingSmithAdapter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -63,6 +64,7 @@
 		A2000001000000000000001D /* TreadmillProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreadmillProtocol.swift; sourceTree = "<group>"; };
 		A2000001000000000000001E /* TreadmillAdapterRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreadmillAdapterRegistry.swift; sourceTree = "<group>"; };
 		A2000001000000000000001F /* PitPatAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitPatAdapter.swift; sourceTree = "<group>"; };
+		A20000010000000000000020 /* KingSmithAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KingSmithAdapter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -132,6 +134,7 @@
 			isa = PBXGroup;
 			children = (
 				A2000001000000000000001F /* PitPatAdapter.swift */,
+				A20000010000000000000020 /* KingSmithAdapter.swift */,
 			);
 			path = Adapters;
 			sourceTree = "<group>";
@@ -251,6 +254,7 @@
 				A1000001000000000000001D /* TreadmillProtocol.swift in Sources */,
 				A1000001000000000000001E /* TreadmillAdapterRegistry.swift in Sources */,
 				A1000001000000000000001F /* PitPatAdapter.swift in Sources */,
+				A10000010000000000000020 /* KingSmithAdapter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
