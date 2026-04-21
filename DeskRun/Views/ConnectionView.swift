@@ -89,7 +89,7 @@ struct ConnectionView: View {
                             VStack(alignment: .leading) {
                                 Text(device.name)
                                     .font(.body)
-                                Text("Signal: \(device.rssi) dBm")
+                                Text("\(device.brand) · Signal: \(device.rssi) dBm")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }

@@ -21,6 +21,10 @@ class AppState {
         let goalManager = GoalManager(dataManager: dataManager)
         let statsCalculator = StatsCalculator(workoutStore: workoutStore)
 
+        // Register all known treadmill adapters before creating the BLE manager.
+        // Add new adapters here as they are implemented.
+        TreadmillAdapterRegistry.shared.register(PitPatAdapter.self)
+
         self.treadmillState = treadmillState
         self.bleManager = TreadmillBLEManager(state: treadmillState)
         self.dataManager = dataManager
