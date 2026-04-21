@@ -67,27 +67,36 @@ struct FTMSAdapter: TreadmillAdapter {
     private let resultSuccess: UInt8 = 0x01
 
     /// Treadmill Data flag bits (uint16 LE in bytes 0-1)
+    /// Per FTMS spec (Bluetooth SIG), bit 10 is Elapsed Time for treadmill data.
     private enum DataFlag {
         static let moreData:       UInt16 = 1 << 0   // bit 0: if 0, instantaneous speed present
         static let averageSpeed:   UInt16 = 1 << 1   // bit 1
         static let totalDistance:  UInt16 = 1 << 2   // bit 2
         static let expendedEnergy: UInt16 = 1 << 7   // bit 7
-        static let elapsedTime:    UInt16 = 1 << 12  // bit 12
+        static let elapsedTime:    UInt16 = 1 << 10  // bit 10 (corrected from bit 12)
     }
 
     // MARK: - Command Builders
 
     func buildStartCommand(speed: Double) -> Data {
-        // FTMS requires: Request Control → Start → Set Speed
-        // We combine Request Control + Start + Set Speed into a sequence.
-        // The BLE manager sends this as a single data blob; however, since FTMS
-        // requires sequential writes, we send Start + Set Speed here.
-        // Request Control should ideally be sent on connection, but we prepend it
-        // for safety.
+        // FTMS requires sequential writes: Request Control → Start/Resume → Set Speed.
+        // We combine all three opcodes into one data payload.
+        // Note: The BLE manager sends this as a single write. For treadmills that
+        // require separate writes per opcode, the manager would need to be updated
+        // to send them sequentially. For now this covers common FTMS implementations.
         var packet = Data()
 
-        // Request Control
+        // 1. Request Control
         packet.append(ControlOpCode.requestControl.rawValue)
+
+        // 2. Start or Resume
+        packet.append(ControlOpCode.startResume.rawValue)
+
+        // 3. Set Target Speed: [0x02, speed_low, speed_high]
+        let rawSpeed = UInt16(clamping: Int(round(speed * 100)))
+        packet.append(ControlOpCode.setTargetSpeed.rawValue)
+        packet.append(UInt8(rawSpeed & 0xFF))
+        packet.append(UInt8(rawSpeed >> 8))
 
         return packet
     }
@@ -130,7 +139,7 @@ struct FTMSAdapter: TreadmillAdapter {
         if (flags & DataFlag.moreData) == 0 {
             guard offset + 2 <= bytes.count else { return status }
             let rawSpeed = UInt16(bytes[offset]) | (UInt16(bytes[offset + 1]) << 8)
-            status.speed = Double(rawSpeed) / 100.0  // 0.01 km/h → km/h
+            status.speed = Double(rawSpeed) / 100.0  // 0.01 km/h -> km/h
             status.isRunning = status.speed > 0
             offset += 2
         }
@@ -148,26 +157,26 @@ struct FTMSAdapter: TreadmillAdapter {
             let rawDistance = UInt32(bytes[offset])
                 | (UInt32(bytes[offset + 1]) << 8)
                 | (UInt32(bytes[offset + 2]) << 16)
-            status.distance = Double(rawDistance) / 1000.0  // meters → km
+            status.distance = Double(rawDistance) / 1000.0  // meters -> km
             offset += 3
         }
 
-        // Skip fields for bits 3-6 (inclination, ramp angle, resistance, instantaneous power)
-        // Bit 3: Inclination + Ramp Angle (sint16 + sint16 = 4 bytes)
+        // Skip fields for bits 3-6 per FTMS Treadmill Data spec:
+        // Bit 3: Inclination (sint16) + Ramp Angle (sint16) = 4 bytes
         if (flags & (1 << 3)) != 0 {
             offset += 4
         }
-        // Bit 4: Resistance Level (sint16 = 2 bytes)
+        // Bit 4: Positive Elevation Gain (uint16) + Negative Elevation Gain (uint16) = 4 bytes
         if (flags & (1 << 4)) != 0 {
-            offset += 2
+            offset += 4
         }
-        // Bit 5: Instantaneous Power (sint16 = 2 bytes)
+        // Bit 5: Instantaneous Pace (uint8) = 1 byte
         if (flags & (1 << 5)) != 0 {
-            offset += 2
+            offset += 1
         }
-        // Bit 6: Average Power (sint16 = 2 bytes)
+        // Bit 6: Average Pace (uint8) = 1 byte
         if (flags & (1 << 6)) != 0 {
-            offset += 2
+            offset += 1
         }
 
         // Expended Energy: total kcal (uint16) + per hour (uint16) + per minute (uint8) = 5 bytes
@@ -178,7 +187,6 @@ struct FTMSAdapter: TreadmillAdapter {
             offset += 5  // skip all three sub-fields
         }
 
-        // Skip fields for bits 8-11 (heart rate, metabolic equivalent, elapsed time via bit 12 handled next)
         // Bit 8: Heart Rate (uint8 = 1 byte)
         if (flags & (1 << 8)) != 0 {
             offset += 1
@@ -187,21 +195,17 @@ struct FTMSAdapter: TreadmillAdapter {
         if (flags & (1 << 9)) != 0 {
             offset += 1
         }
-        // Bit 10: Elapsed Time — note: this is a different bit from bit 12
-        // Actually per FTMS spec, bit 10 is "Elapsed Time" for some profiles.
-        // Bit 11: Remaining Time (uint16 = 2 bytes)
-        if (flags & (1 << 10)) != 0 {
-            offset += 2
-        }
-        if (flags & (1 << 11)) != 0 {
-            offset += 2
-        }
 
-        // Elapsed Time: uint16 LE, in seconds
+        // Bit 10: Elapsed Time (uint16 LE, in seconds)
         if (flags & DataFlag.elapsedTime) != 0 {
             guard offset + 2 <= bytes.count else { return status }
             let rawTime = UInt16(bytes[offset]) | (UInt16(bytes[offset + 1]) << 8)
             status.duration = TimeInterval(rawTime)
+            offset += 2
+        }
+
+        // Bit 11: Remaining Time (uint16 = 2 bytes)
+        if (flags & (1 << 11)) != 0 {
             offset += 2
         }
 
