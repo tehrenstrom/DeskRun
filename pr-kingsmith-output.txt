@@ -1,0 +1,28 @@
+=== KingSmith Adapter: Final Fix ===
+Step 1: Create kingsmith-adapter from current HEAD (8bef7dd)...
+Deleted branch feature/kingsmith-adapter (was c08237e).
+  Created. kingsmith-adapter -> 8bef7ddcafff1b10b4987e4b2f90456bfa222bd6
+
+Step 2: Reset protocol-adapter-layer to c08237e (before KingSmith)...
+HEAD is now at c08237e Refactor: Multi-brand protocol adapter layer
+  protocol-adapter-layer -> c08237e308140911fa551d2bdd91683c5c7923e0
+
+Step 3: Force-push cleaned protocol-adapter-layer...
+To https://github.com/tehrenstrom/DeskRun.git
+ + 8bef7dd...c08237e feature/protocol-adapter-layer -> feature/protocol-adapter-layer (forced update)
+  Done.
+
+Step 4: Switch to kingsmith-adapter and push...
+Switched to branch 'feature/kingsmith-adapter'
+remote: 
+remote: Create a pull request for 'feature/kingsmith-adapter' on GitHub by visiting:        
+remote:      https://github.com/tehrenstrom/DeskRun/pull/new/feature/kingsmith-adapter        
+remote: 
+To https://github.com/tehrenstrom/DeskRun.git
+ * [new branch]      feature/kingsmith-adapter -> feature/kingsmith-adapter
+  Done.
+
+Step 5: Create PR...
+https://github.com/tehrenstrom/DeskRun/pull/2
+
+=== Done ===
