@@ -34,6 +34,7 @@
 		A1000001000000000000001F /* PitPatAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001F /* PitPatAdapter.swift */; };
 		A10000010000000000000020 /* KingSmithAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000020 /* KingSmithAdapter.swift */; };
 		A10000010000000000000021 /* FTMSAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000021 /* FTMSAdapter.swift */; };
+		A10000010000000000000022 /* FitShowAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000022 /* FitShowAdapter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +68,7 @@
 		A2000001000000000000001F /* PitPatAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitPatAdapter.swift; sourceTree = "<group>"; };
 		A20000010000000000000020 /* KingSmithAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KingSmithAdapter.swift; sourceTree = "<group>"; };
 		A20000010000000000000021 /* FTMSAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FTMSAdapter.swift; sourceTree = "<group>"; };
+		A20000010000000000000022 /* FitShowAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FitShowAdapter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,6 +140,7 @@
 				A2000001000000000000001F /* PitPatAdapter.swift */,
 				A20000010000000000000020 /* KingSmithAdapter.swift */,
 				A20000010000000000000021 /* FTMSAdapter.swift */,
+				A20000010000000000000022 /* FitShowAdapter.swift */,
 			);
 			path = Adapters;
 			sourceTree = "<group>";
@@ -259,6 +262,7 @@
 				A1000001000000000000001F /* PitPatAdapter.swift in Sources */,
 				A10000010000000000000020 /* KingSmithAdapter.swift in Sources */,
 				A10000010000000000000021 /* FTMSAdapter.swift in Sources */,
+				A10000010000000000000022 /* FitShowAdapter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

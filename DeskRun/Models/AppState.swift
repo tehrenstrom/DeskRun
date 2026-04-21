@@ -26,6 +26,7 @@ class AppState {
         TreadmillAdapterRegistry.shared.register(PitPatAdapter.self)
         TreadmillAdapterRegistry.shared.register(KingSmithAdapter.self)
         TreadmillAdapterRegistry.shared.register(FTMSAdapter.self)
+        TreadmillAdapterRegistry.shared.register(FitShowAdapter.self)
 
         self.treadmillState = treadmillState
         self.bleManager = TreadmillBLEManager(state: treadmillState)
