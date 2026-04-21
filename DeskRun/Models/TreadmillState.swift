@@ -9,6 +9,14 @@ enum ConnectionStatus: String {
     case error = "Error"
 }
 
+enum TreadmillCommandStatus: String {
+    case idle = "Idle"
+    case pending = "Pending"
+    case accepted = "Accepted"
+    case timedOut = "Timed Out"
+    case rejected = "Rejected"
+}
+
 @Observable
 class TreadmillState {
     var connectionStatus: ConnectionStatus = .disconnected
@@ -19,6 +27,7 @@ class TreadmillState {
     var duration: TimeInterval = 0      // seconds
     var calories: Int = 0
     var isRunning: Bool = false
+    var commandStatus: TreadmillCommandStatus = .idle
     var errorMessage: String?
 
     var formattedDuration: String {

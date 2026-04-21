@@ -11,15 +11,15 @@ import CoreBluetooth
 ///   to FBA0 here since that's what this app's registry routes to us).
 /// - **Write characteristic:** FBA1 (write without response).
 /// - **Notify characteristic:** FBA2.
-/// - **Every write is framed:** `4D 00 <counter> <inner_len> <inner_bytes>`,
-///   where `<counter>` rolls over at 256 and is shared between commands and
-///   heartbeats.
-/// - **Commands** use a 23-byte inner packet starting with `0x6A`, ending
-///   with `0x43`, carrying speed/ramp/incline/weight/userID and an XOR
-///   checksum over bytes [1..20].
-/// - **Heartbeats** use a fixed 5-byte inner packet `6A 05 FD F8 43`, and
-///   the device expects one after every notification it sends — without
-///   it, the firmware ignores command writes.
+/// - **Commands** use a 23-byte packet starting with `0x6A`, ending with
+///   `0x43`, carrying speed/ramp/incline/weight/userID and an XOR checksum
+///   over bytes [1..20].
+/// - This `FBA0/FBA1/FBA2` variant does not require a per-notification
+///   heartbeat write to keep telemetry flowing.
+/// - On the `FBA0/FBA1/FBA2` service family used by DeskRun's PitPat path,
+///   writes are sent directly as raw packets to `FBA1`. The older FF00-style
+///   `4D 00 <counter> <len> ...` envelope seen in some references is not used
+///   on this variant.
 /// - **Notifications** are 52 or 53 bytes starting with `0x68` or `0x66`,
 ///   with an XOR checksum at `[-2]` covering `[1..-3]`.
 ///
@@ -60,11 +60,13 @@ final class PitPatAdapter: TreadmillAdapter {
     // so we must use .withResponse even though the azmke reference happens to
     // run on a bleak stack that auto-picks.
     var writeType: CBCharacteristicWriteType { .withResponse }
+    var minimumStartSpeed: Double { 1.0 }
+    var commandAcceptanceTimeout: TimeInterval { 2.0 }
+    var commandAcceptanceNotificationLimit: Int { 3 }
 
     // MARK: - Stateful Session Data
 
-    /// Rolls over every 256 writes. Shared by commands and heartbeats.
-    private var counter: UInt8 = 0
+    private var usesImperialUnits = false
 
     // MARK: - Protocol Constants
 
@@ -73,8 +75,7 @@ final class PitPatAdapter: TreadmillAdapter {
     private let innerLength: UInt8 = 0x17      // 23 bytes
     private let defaultWeight: UInt8 = 0x50    // 80 kg
     private let defaultUserID: UInt64 = 58_965_456_623
-    /// Heartbeat inner payload. Sent after every notification the device emits.
-    private let heartbeatInner = Data([0x6A, 0x05, 0xFD, 0xF8, 0x43])
+    private let kilometersPerMile = 1.60934
 
     private enum CommandType: UInt8 {
         case stop             = 0x00
@@ -96,33 +97,31 @@ final class PitPatAdapter: TreadmillAdapter {
     // MARK: - Command Builders
 
     func buildStartCommand(speed: Double) -> Data {
-        let inner = buildInner(rawSpeed: rawSpeed(speed),
-                               ramp: .start,
-                               cmd: .startOrSetSpeed)
-        return wrap(inner)
+        buildPacket(rawSpeed: commandRawSpeed(speed),
+                    ramp: .start,
+                    cmd: .startOrSetSpeed,
+                    isKph: true)
     }
 
     func buildStopCommand() -> Data {
-        let inner = buildInner(rawSpeed: 0, ramp: .start, cmd: .stop)
-        return wrap(inner)
+        buildPacket(rawSpeed: 0, ramp: .start, cmd: .stop, isKph: true)
     }
 
     func buildPauseCommand() -> Data {
-        let inner = buildInner(rawSpeed: 0, ramp: .start, cmd: .pause)
-        return wrap(inner)
+        buildPacket(rawSpeed: 0, ramp: .start, cmd: .pause, isKph: true)
     }
 
     func buildSetSpeedCommand(speed: Double) -> Data {
-        let inner = buildInner(rawSpeed: rawSpeed(speed),
-                               ramp: .setSpeed,
-                               cmd: .startOrSetSpeed)
-        return wrap(inner)
+        buildPacket(rawSpeed: commandRawSpeed(speed),
+                    ramp: .setSpeed,
+                    cmd: .startOrSetSpeed,
+                    isKph: true)
     }
 
     // MARK: - Keep-Alive
 
     func onNotificationReceived() -> Data? {
-        return wrap(heartbeatInner)
+        nil
     }
 
     // MARK: - Notification Parser
@@ -145,17 +144,30 @@ final class PitPatAdapter: TreadmillAdapter {
         for i in 2..<(data.count - 2) { cs ^= bytes[i] }
         guard cs == bytes[data.count - 2] else { return status }
 
-        // Speed (0.001 km/h units).
         let curSpeedRaw = (UInt16(bytes[3]) << 8) | UInt16(bytes[4])
-        status.speed = Double(curSpeedRaw) / 1000.0
+        let targetSpeedRaw = (UInt16(bytes[5]) << 8) | UInt16(bytes[6])
 
-        // Distance (0.001 km units = meters).
+        // Running state and unit mode are encoded in the flags byte at [26].
+        let flags = bytes[26]
+        let usesImperialUnits = (flags & 0x80) == 0x80
+        self.usesImperialUnits = usesImperialUnits
+        status.pitPatStateFlags = flags
+        status.pitPatUsesImperialUnits = usesImperialUnits
+        status.pitPatRawCurrentSpeed = curSpeedRaw
+        status.pitPatRawTargetSpeed = targetSpeedRaw
+
+        // Speed fields are reported in the treadmill's active unit mode.
+        // Normalize them to km/h for the shared app state.
+        status.speed = normalizedSpeed(from: curSpeedRaw, usesImperialUnits: usesImperialUnits)
+        status.reportedTargetSpeed = normalizedSpeed(from: targetSpeedRaw, usesImperialUnits: usesImperialUnits)
+
+        // Distance is likewise reported in km or miles depending on the unit flag.
         let distRaw: UInt32 =
             (UInt32(bytes[7]) << 24) |
             (UInt32(bytes[8]) << 16) |
             (UInt32(bytes[9]) << 8)  |
             UInt32(bytes[10])
-        status.distance = Double(distRaw) / 1000.0
+        status.distance = normalizedDistance(from: distRaw, usesImperialUnits: usesImperialUnits)
 
         // Steps (32-bit big-endian).
         let stepsRaw: UInt32 =
@@ -177,6 +189,7 @@ final class PitPatAdapter: TreadmillAdapter {
             (UInt32(bytes[22]) << 8)  |
             UInt32(bytes[23])
         let firmwareVersion = bytes[25]
+        status.pitPatFirmwareVersion = firmwareVersion
         status.duration = firmwareVersion > 19
             ? TimeInterval(durRaw) / 1000.0
             : TimeInterval(durRaw)
@@ -184,7 +197,6 @@ final class PitPatAdapter: TreadmillAdapter {
         // Running state: flags byte at [26] encodes state in bits 3-4 (0x18).
         // 0x08 means "running"; everything else (stopped, paused, finished) we
         // treat as not-running. Also fall back to speed>0 for robustness.
-        let flags = bytes[26]
         let stateBits = flags & 0x18
         status.isRunning = (stateBits == 0x08) || status.speed > 0
 
@@ -193,28 +205,29 @@ final class PitPatAdapter: TreadmillAdapter {
 
     // MARK: - Private Helpers
 
-    /// Convert a km/h speed to the protocol's 0.001 km/h units.
-    private func rawSpeed(_ speed: Double) -> UInt16 {
+    /// Outgoing FBA control packets are encoded in km/h on this PitPat family,
+    /// even when status notifications report imperial units.
+    private func commandRawSpeed(_ speed: Double) -> UInt16 {
         let raw = Int((speed * 1000.0).rounded())
         return UInt16(clamping: max(0, raw))
     }
 
-    /// Wrap an inner packet in the `4D 00 <counter> <len> …` envelope and
-    /// advance the counter. All writes — commands and heartbeats — go through
-    /// this so the counter stays monotonic per session.
-    private func wrap(_ inner: Data) -> Data {
-        var out = Data([0x4D, 0x00, counter, UInt8(inner.count)])
-        out.append(inner)
-        counter = counter &+ 1
-        return out
+    private func normalizedSpeed(from rawSpeed: UInt16, usesImperialUnits: Bool) -> Double {
+        let baseSpeed = Double(rawSpeed) / 1000.0
+        return usesImperialUnits ? baseSpeed * kilometersPerMile : baseSpeed
     }
 
-    /// Build the 23-byte inner command packet.
-    private func buildInner(rawSpeed: UInt16,
-                            ramp: Ramp,
-                            cmd: CommandType,
-                            incline: UInt8 = 0,
-                            isKph: Bool = true) -> Data {
+    private func normalizedDistance(from rawDistance: UInt32, usesImperialUnits: Bool) -> Double {
+        let baseDistance = Double(rawDistance) / 1000.0
+        return usesImperialUnits ? baseDistance * kilometersPerMile : baseDistance
+    }
+
+    /// Build the 23-byte FBA command packet.
+    private func buildPacket(rawSpeed: UInt16,
+                             ramp: Ramp,
+                             cmd: CommandType,
+                             incline: UInt8 = 0,
+                             isKph: Bool = true) -> Data {
         var p = [UInt8](repeating: 0, count: 23)
         p[0] = startByte
         p[1] = innerLength

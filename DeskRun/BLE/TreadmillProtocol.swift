@@ -11,6 +11,12 @@ struct TreadmillStatus {
     var duration: TimeInterval = 0   // seconds
     var calories: Int = 0
     var isRunning: Bool = false
+    var reportedTargetSpeed: Double?
+    var pitPatFirmwareVersion: UInt8?
+    var pitPatStateFlags: UInt8?
+    var pitPatUsesImperialUnits: Bool?
+    var pitPatRawCurrentSpeed: UInt16?
+    var pitPatRawTargetSpeed: UInt16?
 }
 
 // MARK: - Treadmill Adapter Protocol
