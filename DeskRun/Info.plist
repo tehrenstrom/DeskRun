@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<\!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>NSBluetoothAlwaysUsageDescription</key>
@@ -8,5 +8,7 @@
     <string>DeskRun reads your health data to show workout history.</string>
     <key>NSHealthUpdateUsageDescription</key>
     <string>DeskRun saves your treadmill workouts to Apple Health.</string>
+    <key>NSUserNotificationsUsageDescription</key>
+    <string>DeskRun sends motivational reminders and goal progress updates to help you stay active.</string>
 </dict>
 </plist>

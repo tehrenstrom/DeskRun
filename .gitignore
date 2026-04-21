@@ -28,3 +28,7 @@ Package.resolved
 .DS_Store
 *.swp
 *~.nib
+
+# Build artifacts
+build-output.txt
+*.command

@@ -1,101 +1,251 @@
 import SwiftUI
+import Charts
 
 struct DashboardView: View {
-    @Bindable var state: TreadmillState
-    let bleManager: TreadmillBLEManager
+    let appState: AppState
+    @State private var selectedPeriod: StatsPeriod = .day
+    @State private var chartDays: Int = 7
+
+    private var stats: PeriodStats { appState.statsCalculator.stats(for: selectedPeriod) }
 
     var body: some View {
-        VStack(spacing: 24) {
-            // Speed display
-            VStack(spacing: 4) {
-                Text(state.formattedSpeed)
-                    .font(.system(size: 72, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                Text("CURRENT SPEED")
+        ScrollView {
+            VStack(spacing: 20) {
+                // Top: Progress ring + streak
+                HStack(spacing: 24) {
+                    todayProgressRing
+                    streakDisplay
+                    Spacer()
+                }
+                .padding(.horizontal)
+
+                // Journey progress
+                journeyProgressSection
+                    .padding(.horizontal)
+
+                // Period selector + stats cards
+                VStack(alignment: .leading, spacing: 12) {
+                    Picker("Period", selection: $selectedPeriod) {
+                        ForEach(StatsPeriod.allCases, id: \.self) { period in
+                            Text(period.rawValue).tag(period)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 400)
+
+                    statsCards
+                }
+                .padding(.horizontal)
+
+                // Chart
+                chartSection
+                    .padding(.horizontal)
+
+                Spacer()
+            }
+            .padding(.vertical)
+        }
+        .navigationTitle("Dashboard")
+    }
+
+    // MARK: - Today's Progress Ring
+
+    @ViewBuilder
+    private var todayProgressRing: some View {
+        let dailyGoal = appState.goalManager.activeGoals.first(where: { $0.timeframe == .daily })
+        let progress: Double = {
+            if let goal = dailyGoal {
+                return appState.goalManager.progress(
+                    for: goal,
+                    workouts: appState.workoutStore.todaysWorkouts,
+                    settings: appState.settings
+                ).percentage
+            }
+            return 0
+        }()
+
+        VStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .stroke(Color.blue.opacity(0.15), lineWidth: 10)
+                Circle()
+                    .trim(from: 0, to: CGFloat(progress))
+                    .stroke(Color.blue, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .animation(.easeInOut(duration: 0.6), value: progress)
+                VStack(spacing: 2) {
+                    Text("\(Int(progress * 100))%")
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                    Text("today")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(width: 100, height: 100)
+
+            if let goal = dailyGoal {
+                let prog = appState.goalManager.progress(
+                    for: goal,
+                    workouts: appState.workoutStore.todaysWorkouts,
+                    settings: appState.settings
+                )
+                Text("\(prog.formattedCurrent) / \(prog.formattedTarget) \(goal.unit.symbol)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+        }
+    }
 
-            // Stats grid
-            HStack(spacing: 40) {
-                StatView(title: "Distance", value: state.formattedDistance, icon: "map")
-                StatView(title: "Steps", value: "\(state.steps)", icon: "shoeprints.fill")
-                StatView(title: "Time", value: state.formattedDuration, icon: "clock")
-                StatView(title: "Calories", value: "\(state.calories) kcal", icon: "flame")
+    // MARK: - Streak
+
+    @ViewBuilder
+    private var streakDisplay: some View {
+        let current = appState.statsCalculator.currentStreak
+        let best = appState.statsCalculator.bestStreak
+
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Text("🔥")
+                    .font(.title)
+                VStack(alignment: .leading) {
+                    Text("\(current)")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                    Text("day streak")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if best > current {
+                Text("Best: \(best) days")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    // MARK: - Journey Progress
+
+    @ViewBuilder
+    private var journeyProgressSection: some View {
+        if let journey = appState.goalManager.activeGoals.first(where: { $0.timeframe == .custom }) {
+            let prog = appState.goalManager.progress(
+                for: journey,
+                workouts: appState.workoutStore.workouts,
+                settings: appState.settings
+            )
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(journey.name)
+                        .font(.headline)
+                    Spacer()
+                    Text("\(prog.formattedCurrent) / \(prog.formattedTarget) \(journey.unit.symbol)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                ProgressView(value: prog.percentage)
+                    .tint(.orange)
+                    .scaleEffect(y: 2)
+
+                if let nudge = appState.goalManager.nudgeText(
+                    for: journey,
+                    workouts: appState.workoutStore.workouts,
+                    settings: appState.settings
+                ) {
+                    Text(nudge)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             .padding()
+            .background(.background.secondary)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
 
-            Divider()
+    // MARK: - Stats Cards
 
-            // Speed control
-            VStack(spacing: 12) {
-                Text("Target Speed: \(String(format: "%.1f", state.targetSpeed)) km/h")
+    @ViewBuilder
+    private var statsCards: some View {
+        HStack(spacing: 16) {
+            StatCard(
+                title: "Distance",
+                value: appState.settings.distanceString(stats.distance),
+                icon: "map",
+                color: .blue
+            )
+            StatCard(
+                title: "Time",
+                value: stats.formattedDuration,
+                icon: "clock",
+                color: .green
+            )
+            StatCard(
+                title: "Steps",
+                value: "\(stats.steps)",
+                icon: "shoeprints.fill",
+                color: .orange
+            )
+            StatCard(
+                title: "Calories",
+                value: "\(stats.calories) kcal",
+                icon: "flame",
+                color: .red
+            )
+        }
+    }
+
+    // MARK: - Chart
+
+    @ViewBuilder
+    private var chartSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Daily Distance")
                     .font(.headline)
-
-                Slider(value: $state.targetSpeed, in: 0...6, step: 0.5) {
-                    Text("Speed")
-                } minimumValueLabel: {
-                    Text("0")
-                } maximumValueLabel: {
-                    Text("6")
+                Spacer()
+                Picker("Days", selection: $chartDays) {
+                    Text("7 days").tag(7)
+                    Text("30 days").tag(30)
                 }
-                .frame(maxWidth: 400)
-
-                // Quick speed buttons
-                HStack(spacing: 12) {
-                    ForEach([2.0, 3.0, 4.0, 5.0, 6.0], id: \.self) { speed in
-                        Button("\(String(format: "%.0f", speed))") {
-                            state.targetSpeed = speed
-                            bleManager.setSpeed(speed)
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                }
+                .pickerStyle(.segmented)
+                .frame(width: 160)
             }
 
-            // Control buttons
-            HStack(spacing: 16) {
-                if state.isRunning {
-                    Button("Pause") {
-                        bleManager.pauseTreadmill()
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
+            let data = appState.statsCalculator.dailyDistances(last: chartDays)
+            let useMetric = appState.settings.useMetric
 
-                    Button("Stop") {
-                        bleManager.stopTreadmill()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    .controlSize(.large)
-                } else {
-                    Button("Start Walking") {
-                        let speed = state.targetSpeed > 0 ? state.targetSpeed : 3.0
-                        bleManager.startTreadmill(speed: speed)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
-                    .controlSize(.large)
-                }
+            Chart(data) { item in
+                BarMark(
+                    x: .value("Date", item.date, unit: .day),
+                    y: .value("Distance", useMetric ? item.distance : item.distance / 1.60934)
+                )
+                .foregroundStyle(.blue.gradient)
+                .cornerRadius(4)
             }
-
-            Spacer()
+            .chartYAxisLabel(appState.settings.distanceUnitShort)
+            .frame(height: 180)
         }
         .padding()
-        .navigationTitle("Dashboard")
+        .background(.background.secondary)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 
-struct StatView: View {
+// MARK: - StatCard
+
+struct StatCard: View {
     let title: String
     let value: String
     let icon: String
+    let color: Color
 
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.title2)
-                .foregroundStyle(.blue)
+                .font(.title3)
+                .foregroundStyle(color)
             Text(value)
                 .font(.title3)
                 .fontWeight(.semibold)
@@ -104,6 +254,9 @@ struct StatView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .frame(minWidth: 80)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(.background.secondary)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }

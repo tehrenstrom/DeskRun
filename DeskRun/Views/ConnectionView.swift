@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ConnectionView: View {
     let state: TreadmillState
-    let bleManager: TreadmillBLEManager
+    @ObservedObject var bleManager: TreadmillBLEManager
 
     var body: some View {
         VStack(spacing: 20) {
@@ -35,6 +35,42 @@ struct ConnectionView: View {
                 }
                 .buttonStyle(.bordered)
             } else if state.connectionStatus == .connected {
+                // Quick controls right here so user doesn't have to navigate
+                VStack(spacing: 12) {
+                    Divider()
+                    Text("Quick Controls")
+                        .font(.headline)
+
+                    if state.isRunning {
+                        HStack(spacing: 12) {
+                            Button("Pause") {
+                                bleManager.pauseTreadmill()
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.large)
+
+                            Button("Stop") {
+                                bleManager.stopTreadmill()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            .controlSize(.large)
+                        }
+                    } else {
+                        Button("Start Walking (3.0 km/h)") {
+                            bleManager.startTreadmill(speed: 3.0)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                        .controlSize(.large)
+                    }
+
+                    Text("Tip: Use the Dashboard tab for full speed controls")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Divider()
+                }
+
                 Button("Disconnect") {
                     bleManager.disconnect()
                 }
@@ -43,7 +79,7 @@ struct ConnectionView: View {
             }
 
             // Discovered devices
-            if \!bleManager.discoveredDevices.isEmpty {
+            if !bleManager.discoveredDevices.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Discovered Devices")
                         .font(.headline)

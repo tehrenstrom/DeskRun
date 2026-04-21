@@ -2,21 +2,15 @@ import SwiftUI
 
 @main
 struct DeskRunApp: App {
-    @State private var treadmillState = TreadmillState()
-    @State private var bleManager: TreadmillBLEManager
-
-    init() {
-        let state = TreadmillState()
-        _treadmillState = State(initialValue: state)
-        _bleManager = State(initialValue: TreadmillBLEManager(state: state))
-    }
+    @State private var appState = AppState()
 
     var body: some Scene {
         WindowGroup {
-            ContentView(state: treadmillState, bleManager: bleManager)
+            ContentView(appState: appState)
         }
         MenuBarExtra("DeskRun", systemImage: "figure.walk") {
-            MenuBarView(state: treadmillState, bleManager: bleManager)
+            MenuBarView(appState: appState)
         }
+        .menuBarExtraStyle(.window)
     }
 }
