@@ -60,10 +60,39 @@ struct JourneyWalkCard: View {
 
             Spacer(minLength: 8)
 
+            if recorder.isRecording {
+                sessionMetrics
+            }
+
             actionRow
 
             statusBadge
         }
+    }
+
+    private var sessionMetrics: some View {
+        VStack(alignment: .trailing, spacing: 1) {
+            Text(settings.distanceString(recorder.sessionDistance))
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundStyle(TrailColor.darkEarth)
+                .monospacedDigit()
+            Text(formatDuration(recorder.sessionDuration))
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundStyle(TrailColor.text.opacity(0.65))
+                .monospacedDigit()
+        }
+        .fixedSize()
+    }
+
+    private func formatDuration(_ seconds: TimeInterval) -> String {
+        let total = Int(seconds)
+        let h = total / 3600
+        let m = (total % 3600) / 60
+        let s = total % 60
+        if h > 0 {
+            return String(format: "%d:%02d:%02d", h, m, s)
+        }
+        return String(format: "%d:%02d", m, s)
     }
 
     private var presetRow: some View {

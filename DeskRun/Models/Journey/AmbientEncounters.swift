@@ -569,7 +569,18 @@ enum AmbientScheduler {
             // Fade in/out at the approach/exit edges.
             let fadeIn = smoothstep(Double((0.9 - worldOffsetMiles) / 0.25).clamped(to: 0...1))
             let fadeOut = smoothstep(Double((worldOffsetMiles + 0.35) / 0.2).clamped(to: 0...1))
-            let fade = min(fadeIn, fadeOut)
+            // Pass-by fade — foreground actors would visually overlap the main
+            // hiker as they cross its fixed screen position. Fade them out
+            // inside a small dead-zone so they appear to pass off to the side.
+            var passByFade = 1.0
+            if actor.band == .foreground {
+                let deadZone: CGFloat = actor.species == .hiker ? 70 : 40
+                let distance = abs(screenX - context.hikerScreenX)
+                if distance < deadZone {
+                    passByFade = smoothstep(Double(distance / deadZone))
+                }
+            }
+            let fade = min(fadeIn, fadeOut) * passByFade
             return AmbientRender(
                 id: actor.id,
                 species: actor.species,

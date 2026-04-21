@@ -137,12 +137,6 @@ struct KingSmithAdapter: TreadmillAdapter {
             status.distance = Double(rawDistance) * 10.0 / 1000.0  // 10 m → km
         }
 
-        // Steps: 3-byte big-endian counter
-        if bytes.count >= 14 {
-            let rawSteps = (UInt32(bytes[11]) << 16) | (UInt32(bytes[12]) << 8) | UInt32(bytes[13])
-            status.steps = Int(rawSteps)
-        }
-
         // WalkingPad doesn't report calories in the base notification;
         // leave at default 0.
 

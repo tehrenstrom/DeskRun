@@ -17,7 +17,12 @@
       "Bash(git fetch *)",
       "Bash(git checkout *)",
       "Bash(git merge *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(xcodebuild -project DeskRun.xcodeproj -scheme DeskRun -configuration Debug -derivedDataPath /Users/travisehrenstrom/Library/Developer/Xcode/DerivedData/DeskRun-gyyutcvpwdjwimduwvxruztppgsz build)",
+      "Bash(swiftc -parse DeskRun/Models/WorkoutRecord.swift DeskRun/Models/WorkoutRecorder.swift DeskRun/Models/WorkoutStore.swift DeskRun/Models/StatsCalculator.swift DeskRun/Models/AppSettings.swift DeskRun/Models/TreadmillState.swift DeskRun/Models/WalkSession.swift DeskRun/Models/Goal.swift DeskRun/Models/GoalManager.swift DeskRun/Models/DataManager.swift DeskRun/Models/TrailMessages.swift 'DeskRun/Models/Journey/*.swift')",
+      "Bash(swiftc -parse DeskRun/Views/DashboardView.swift)",
+      "Read(//Users/trav:ehrenstrom/Developer/DeskRun/DeskRun/Models/**)"
     ],
     "additionalDirectories": [
       "/Users/travisehrenstrom/Library/Developer/Xcode/DerivedData/DeskRun-gyyutcvpwdjwimduwvxruztppgsz"

@@ -467,7 +467,6 @@ class TreadmillBLEManager: NSObject, ObservableObject, CBCentralManagerDelegate,
             guard let self = self else { return }
             self.state.currentSpeed = status.speed
             self.state.distance = status.distance
-            self.state.steps = status.steps
             self.state.duration = status.duration
             self.state.calories = status.calories
             self.state.isRunning = status.isRunning
@@ -816,7 +815,6 @@ class TreadmillBLEManager: NSObject, ObservableObject, CBCentralManagerDelegate,
         var snapshot = TreadmillStatus()
         snapshot.speed = state.currentSpeed
         snapshot.distance = state.distance
-        snapshot.steps = state.steps
         snapshot.duration = state.duration
         snapshot.calories = state.calories
         snapshot.isRunning = state.isRunning

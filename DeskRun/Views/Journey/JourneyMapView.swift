@@ -245,18 +245,6 @@ struct JourneyMapView: View {
                         .frame(width: hikerSize, height: hikerSize)
                         .position(x: hikerOffsetX, y: trailTopY - hikerSize / 2 + 4)
 
-                    // Mile marker text floating just above the hiker
-                    Text("\(settings.distanceUnitShort.uppercased()) \(settings.distanceValueString(miles: active.milesTraveled)) / \(settings.distanceValueString(miles: trail.totalMiles, decimals: 0))")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .foregroundStyle(TrailColor.darkEarth)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(TrailColor.parchment)
-                        .overlay(
-                            Rectangle()
-                                .strokeBorder(TrailColor.darkEarth, lineWidth: 1)
-                        )
-                        .position(x: hikerOffsetX, y: trailTopY - hikerSize - 16)
                 }
             }
         }

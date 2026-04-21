@@ -17,11 +17,9 @@ class WorkoutRecorder {
     private var lastNonZeroSpeed: Date?
     private var zeroSpeedTimer: Timer?
     private(set) var sessionDistance: Double = 0
-    private(set) var sessionSteps: Int = 0
     private(set) var sessionCalories: Int = 0
     private(set) var sessionDuration: TimeInterval = 0
     private var lastObservedDistance: Double?
-    private var lastObservedSteps: Int?
     private var lastObservedCalories: Int?
     private var lastObservedDuration: TimeInterval?
     private var lastAccumulateAt: Date?
@@ -84,7 +82,6 @@ class WorkoutRecorder {
         currentWorkoutStart = Date()
         lastNonZeroSpeed = currentWorkoutStart
         sessionDistance = 0
-        sessionSteps = 0
         sessionCalories = 0
         sessionDuration = 0
         rebaseObservations()
@@ -98,7 +95,6 @@ class WorkoutRecorder {
     /// or replayed values we'd otherwise double-count).
     private func rebaseObservations() {
         lastObservedDistance = treadmillState.distance
-        lastObservedSteps = treadmillState.steps
         lastObservedCalories = treadmillState.calories
         lastObservedDuration = treadmillState.duration
         lastAccumulateAt = Date()
@@ -136,7 +132,7 @@ class WorkoutRecorder {
             startDate: startDate,
             endDate: endDate,
             distance: recordedDistance,
-            steps: sessionSteps,
+            steps: StepsEstimate.steps(fromKm: recordedDistance),
             calories: sessionCalories,
             duration: recordedDuration,
             averageSpeed: recordedSpeed,
@@ -165,11 +161,9 @@ class WorkoutRecorder {
         currentWorkoutStart = nil
         lastNonZeroSpeed = nil
         sessionDistance = 0
-        sessionSteps = 0
         sessionCalories = 0
         sessionDuration = 0
         lastObservedDistance = nil
-        lastObservedSteps = nil
         lastObservedCalories = nil
         lastObservedDuration = nil
         lastAccumulateAt = nil
@@ -233,15 +227,6 @@ class WorkoutRecorder {
             }
         }
         lastObservedDistance = treadmillState.distance
-
-        if let lastObservedSteps {
-            let stepDelta = treadmillState.steps - lastObservedSteps
-            if stepDelta > 0 {
-                sessionSteps += stepDelta
-                advanced = advanced || stepDelta > 0
-            }
-        }
-        lastObservedSteps = treadmillState.steps
 
         if let lastObservedCalories {
             let calorieDelta = treadmillState.calories - lastObservedCalories

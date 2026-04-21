@@ -94,8 +94,6 @@ struct FitShowAdapter: TreadmillAdapter {
         static let timeLow      = 7
         static let caloriesHigh = 8   // uint16
         static let caloriesLow  = 9
-        static let stepsHigh    = 10  // may not be present on all models
-        static let stepsLow     = 11
     }
 
     /// Minimum notification length required to parse core fields
@@ -155,13 +153,6 @@ struct FitShowAdapter: TreadmillAdapter {
         let rawCalories = (UInt16(bytes[NotifyOffset.caloriesHigh]) << 8)
             | UInt16(bytes[NotifyOffset.caloriesLow])
         status.calories = Int(rawCalories)
-
-        // Steps: optional, only present if packet is long enough
-        if bytes.count >= NotifyOffset.stepsLow + 1 {
-            let rawSteps = (UInt16(bytes[NotifyOffset.stepsHigh]) << 8)
-                | UInt16(bytes[NotifyOffset.stepsLow])
-            status.steps = Int(rawSteps)
-        }
 
         // Running state
         status.isRunning = status.speed > 0

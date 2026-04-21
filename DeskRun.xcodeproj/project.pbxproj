@@ -17,6 +17,7 @@
 		A10000010000000000000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000009 /* Assets.xcassets */; };
 		A10000010000000000000010 /* Goal.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000010 /* Goal.swift */; };
 		A10000010000000000000011 /* WorkoutRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000011 /* WorkoutRecord.swift */; };
+		A10000010000000000000073 /* StepsEstimate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000073 /* StepsEstimate.swift */; };
 		A10000010000000000000012 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000012 /* AppSettings.swift */; };
 		A10000010000000000000013 /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000013 /* DataManager.swift */; };
 		A10000010000000000000014 /* GoalManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000014 /* GoalManager.swift */; };
@@ -82,6 +83,7 @@
 		A2000001000000000000000C /* DeskRun.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeskRun.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000010000000000000010 /* Goal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Goal.swift; sourceTree = "<group>"; };
 		A20000010000000000000011 /* WorkoutRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRecord.swift; sourceTree = "<group>"; };
+		A20000010000000000000073 /* StepsEstimate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepsEstimate.swift; sourceTree = "<group>"; };
 		A20000010000000000000012 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		A20000010000000000000013 /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
 		A20000010000000000000014 /* GoalManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalManager.swift; sourceTree = "<group>"; };
@@ -181,6 +183,7 @@
 				A20000010000000000000002 /* TreadmillState.swift */,
 				A20000010000000000000010 /* Goal.swift */,
 				A20000010000000000000011 /* WorkoutRecord.swift */,
+				A20000010000000000000073 /* StepsEstimate.swift */,
 				A20000010000000000000012 /* AppSettings.swift */,
 				A20000010000000000000013 /* DataManager.swift */,
 				A20000010000000000000014 /* GoalManager.swift */,
@@ -402,6 +405,7 @@
 				A10000010000000000000008 /* MenuBarView.swift in Sources */,
 				A10000010000000000000010 /* Goal.swift in Sources */,
 				A10000010000000000000011 /* WorkoutRecord.swift in Sources */,
+				A10000010000000000000073 /* StepsEstimate.swift in Sources */,
 				A10000010000000000000012 /* AppSettings.swift in Sources */,
 				A10000010000000000000013 /* DataManager.swift in Sources */,
 				A10000010000000000000014 /* GoalManager.swift in Sources */,

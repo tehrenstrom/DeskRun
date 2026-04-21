@@ -7,7 +7,6 @@ import CoreBluetooth
 struct TreadmillStatus {
     var speed: Double = 0.0          // km/h
     var distance: Double = 0.0       // km
-    var steps: Int = 0
     var duration: TimeInterval = 0   // seconds
     var calories: Int = 0
     var isRunning: Bool = false

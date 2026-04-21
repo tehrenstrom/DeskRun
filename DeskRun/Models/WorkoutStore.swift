@@ -9,6 +9,22 @@ class WorkoutStore {
     init(dataManager: DataManager) {
         self.dataManager = dataManager
         self.workouts = dataManager.loadWorkouts()
+        backfillLegacyStepsIfNeeded()
+    }
+
+    /// Records saved before we derived steps from distance have `steps == 0`
+    /// because the treadmill didn't report steps. Populate them from distance
+    /// so History and stats show a realistic count. Idempotent: once a record
+    /// has non-zero steps it's left alone.
+    private func backfillLegacyStepsIfNeeded() {
+        var didChange = false
+        for i in workouts.indices {
+            if workouts[i].steps == 0 && workouts[i].distance > 0 {
+                workouts[i].steps = StepsEstimate.steps(fromKm: workouts[i].distance)
+                didChange = true
+            }
+        }
+        if didChange { save() }
     }
 
     // MARK: - CRUD

@@ -169,14 +169,6 @@ final class PitPatAdapter: TreadmillAdapter {
             UInt32(bytes[10])
         status.distance = normalizedDistance(from: distRaw, usesImperialUnits: usesImperialUnits)
 
-        // Steps (32-bit big-endian).
-        let stepsRaw: UInt32 =
-            (UInt32(bytes[14]) << 24) |
-            (UInt32(bytes[15]) << 16) |
-            (UInt32(bytes[16]) << 8)  |
-            UInt32(bytes[17])
-        status.steps = Int(stepsRaw)
-
         // Calories (16-bit big-endian).
         let calRaw = (UInt16(bytes[18]) << 8) | UInt16(bytes[19])
         status.calories = Int(calRaw)

@@ -139,12 +139,15 @@ enum JourneyWorkoutBackfillMigration {
                 didChange = true
             }
 
+            // Steps are derived from distance at load time (see
+            // `WorkoutStore.backfillLegacyStepsIfNeeded`), so `steps == 0` is
+            // no longer a reliable "ghost record" signal — detect on the
+            // remaining zeroed fields only.
             let suspiciousIndices = relatedIndices.filter { index in
                 let workout = workouts[index]
                 return workout.distance > 0
                     && workout.duration == 0
                     && workout.averageSpeed == 0
-                    && workout.steps == 0
                     && workout.calories == 0
             }
 
@@ -182,7 +185,7 @@ enum JourneyWorkoutBackfillMigration {
                 startDate: anchorDate,
                 endDate: anchorDate.addingTimeInterval(synthesizedDuration),
                 distance: missingDistanceKm,
-                steps: 0,
+                steps: StepsEstimate.steps(fromKm: missingDistanceKm),
                 calories: 0,
                 duration: synthesizedDuration,
                 averageSpeed: paceKmh,
