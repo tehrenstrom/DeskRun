@@ -935,7 +935,8 @@ private enum FinaleArt {
         var farHeights: [Int] = []
         for x in 0..<512 {
             let a = Double(x) * 0.035
-            let h = 35 + Int(18 * sin(a) + 12 * sin(a * 1.7) + 6 * sin(a * 3.1))
+            let noise: Double = 18.0 * sin(a) + 12.0 * sin(a * 1.7) + 6.0 * sin(a * 3.1)
+            let h = 35 + Int(noise)
             farHeights.append(h)
         }
         c.silhouette(heights: farHeights, baselineY: 200, color: p.mountDark)
@@ -950,7 +951,8 @@ private enum FinaleArt {
         var midHeights: [Int] = []
         for x in 0..<512 {
             let a = Double(x) * 0.025
-            let h = 55 + Int(24 * sin(a * 0.8) + 16 * sin(a * 2.1) + 8 * sin(a * 4.3))
+            let noise: Double = 24.0 * sin(a * 0.8) + 16.0 * sin(a * 2.1) + 8.0 * sin(a * 4.3)
+            let h = 55 + Int(noise)
             midHeights.append(h)
         }
         c.silhouette(heights: midHeights, baselineY: 230, color: p.mountBlue)
@@ -998,7 +1000,8 @@ private enum FinaleArt {
 
         // Winding trail
         for x in 0..<512 {
-            let y = 285 + Int(6 * sin(Double(x) * 0.04))
+            let wave: Double = 6.0 * sin(Double(x) * 0.04)
+            let y = 285 + Int(wave)
             c.rect(x, y, 1, 3, p.sand)
             c.px(x, y - 1, p.grass)
         }
