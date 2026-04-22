@@ -41,9 +41,7 @@ struct JourneyMapView: View {
                 LandmarkNoticeView(landmark: landmark.landmark) {
                     appState.journeyEngine.dismissLandmarkNotice()
                 }
-                .padding(.top, 80)
-                .transition(.scale.combined(with: .opacity))
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 
             // Ambient wildlife/weather flavor caption (non-blocking, auto-dismiss).
@@ -57,12 +55,25 @@ struct JourneyMapView: View {
                     .allowsHitTesting(false)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: appState.journeyEngine.pendingEncounter?.id)
-        .animation(.easeInOut(duration: 0.3), value: appState.journeyEngine.pendingLandmark?.id)
-        .animation(.easeInOut(duration: 0.35), value: appState.journeyEngine.ambientCaption)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(TrailColor.sky)
         .navigationTitle(trail?.name ?? "Trail")
+        .background(debugShortcuts)
+    }
+
+    @ViewBuilder
+    private var debugShortcuts: some View {
+#if DEBUG
+        Button("Simulate next landmark") {
+            appState.journeyEngine.debugAdvanceToNextLandmark()
+        }
+        .keyboardShortcut("l", modifiers: [.command, .shift])
+        .frame(width: 0, height: 0)
+        .opacity(0)
+        .accessibilityHidden(true)
+#else
+        EmptyView()
+#endif
     }
 
     @ViewBuilder
@@ -448,32 +459,39 @@ private struct LandmarkNoticeView: View {
     let landmark: Landmark
     let onDismiss: () -> Void
 
+    // Fixed card width. The notice is a prominent modal, not a fluid
+    // container — pinning the width prevents the `.fixedSize` +
+    // `.frame(maxWidth:)` + `.multilineTextAlignment(.center)` combo
+    // from entering the AppKit layout-feedback loop that hung the app.
+    private static let cardWidth: CGFloat = 420
+    private static let flavorTextWidth: CGFloat = 360
+
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 14) {
             Text("LANDMARK REACHED")
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .font(.system(size: 12, weight: .bold, design: .monospaced))
                 .foregroundStyle(TrailColor.coral)
                 .tracking(2)
 
-            PixelImage(assetName: landmark.spriteAsset, size: 96)
+            PixelImage(assetName: landmark.spriteAsset, size: 128)
 
             Text(landmark.name.uppercased())
-                .font(.system(size: 16, weight: .black, design: .monospaced))
+                .font(.system(size: 20, weight: .black, design: .monospaced))
                 .foregroundStyle(TrailColor.darkEarth)
                 .tracking(2)
 
             Text(landmark.flavorText)
-                .font(.system(size: 11, design: .monospaced))
+                .font(.system(size: 12, design: .monospaced))
                 .foregroundStyle(TrailColor.text)
                 .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: 360)
+                .frame(width: Self.flavorTextWidth)
 
             Button("Continue") { onDismiss() }
                 .buttonStyle(RetroButtonStyle(tint: TrailColor.forestGreen))
                 .keyboardShortcut(.defaultAction)
         }
-        .padding(20)
+        .padding(24)
+        .frame(width: Self.cardWidth)
         .background(TrailColor.parchment)
         .overlay(
             Rectangle()

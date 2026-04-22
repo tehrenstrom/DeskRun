@@ -205,13 +205,21 @@ final class JourneyEngine {
         for landmark in trail.landmarks where landmark.mileMarker > range.lowerBound && landmark.mileMarker <= range.upperBound {
             if state.visitedLandmarkIDs.insert(landmark.id).inserted {
                 pendingLandmark = LandmarkNotice(landmark: landmark)
-                SoundManager.shared.playGoalAchieved()
-                // Add a Trail Portrait collectible to the Trophy Wall.
-                store.addPortrait(TrailPortrait(
-                    trailID: trail.id,
-                    landmarkID: landmark.id,
-                    journeyID: state.id
-                ))
+                // Sound synthesis and portrait persistence are pushed off this
+                // tick. They're observable-state writers that landed in the
+                // same frame as `pendingLandmark` + `visitedLandmarkIDs` above
+                // and triggered a main-thread hang on first-landmark crossing.
+                let trailID = trail.id
+                let landmarkID = landmark.id
+                let journeyID = state.id
+                Task { @MainActor [weak self] in
+                    SoundManager.shared.playGoalAchieved()
+                    self?.store.addPortrait(TrailPortrait(
+                        trailID: trailID,
+                        landmarkID: landmarkID,
+                        journeyID: journeyID
+                    ))
+                }
             }
         }
 
@@ -362,4 +370,46 @@ final class JourneyEngine {
             resolve(choiceID: active.event.defaultChoiceID, wasDefault: true)
         }
     }
+
+#if DEBUG
+    /// Push the active journey's odometer just past the next landmark and
+    /// fire the event pipeline, so landmark-crossing bugs can be reproduced
+    /// without walking the real distance. Treadmill baselines are rebased
+    /// so subsequent real BLE ticks don't double-count the jump.
+    func debugAdvanceToNextLandmark() {
+        guard var state = store.active, state.status == .active,
+              let trail = currentTrail ?? TrailCatalog.trail(for: state.trailID),
+              let next = trail.landmarks
+                .filter({ $0.mileMarker > state.milesTraveled })
+                .min(by: { $0.mileMarker < $1.mileMarker })
+        else { return }
+
+        self.currentTrail = trail
+
+        // Teleport silently to just before the landmark — pre-mark any
+        // encounters we're skipping as already-fired so only the landmark
+        // event actually surfaces. This isolates landmark-crossing bugs
+        // from encounter-overlay bugs.
+        let silentEnd = max(state.milesTraveled, next.mileMarker - 0.001)
+        for event in trail.encounters where event.triggerMile <= silentEnd {
+            state.firedEncounterIDs.insert(event.id)
+        }
+        state.milesTraveled = silentEnd
+
+        // Now emit over a tiny range that only contains the landmark itself.
+        let previousMiles = state.milesTraveled
+        state.milesTraveled = min(trail.totalMiles, next.mileMarker + 0.01)
+        state.baselineTreadmillKm = treadmillState.distance - (state.milesTraveled * 1.60934)
+        state.lastSeenTreadmillKm = treadmillState.distance
+
+        emitEvents(in: previousMiles...state.milesTraveled, state: &state, trail: trail)
+
+        if state.milesTraveled >= trail.totalMiles {
+            store.saveActive(state)
+            completeJourney()
+        } else {
+            store.saveActive(state)
+        }
+    }
+#endif
 }
